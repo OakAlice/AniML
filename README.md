@@ -2,7 +2,7 @@
 
 This repository contains a minimal pipeline for training, validating, and testing a Random Forest classifier on animal accelerometer data. The script includes data formatting, feature extraction, train-test splitting, and hyperparameter tuning for a limited set of hyperparameters. It is very simplistic. Mainly just to provide functions with suggested workflow. I'm still working on improving this and will continue to update it as I continue in my PhD.
 
-Code written by Oakleigh Wilson in ~2024. For help or questions, contact my work email: **oakleigh.wilson@research.usc.edu.au**
+Code written by Oakleigh Wilson in ~2024. This is totally research-grade code and not at all to a professional standard. For help or questions, contact my work email: **oakleigh.wilson@research.usc.edu.au**
 Worked example provided. Example data sourced from [Vehkaoja et al., 2020](https://www.sciencedirect.com/science/article/pii/S2352340922000348) but only a very small amount of data commited to Git (otherwise too big).
 
 ---
