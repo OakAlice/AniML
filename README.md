@@ -1,4 +1,4 @@
-# SmallAniMLs
+# LittleAniMLs
 
 This repository contains a minimal pipeline for developing a supervised machine learning animal behaviour classifier for small datasets. Works for larger datasets as well. 
 
