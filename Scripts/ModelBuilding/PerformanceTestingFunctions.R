@@ -1,30 +1,7 @@
-# Testing optimal models --------------------------------------------------
-# Function to apply column selection changes to both training and testing data
-update_feature_data <- function(data, multi) {
-  
-  cols_to_remove <- c("Activity", "GeneralisedActivity")
-  # classes to remove logic
- if (multi == "GeneralisedActivity") {
-    col_to_rename <- "GeneralisedActivity"
-  } else if (multi == "Activity") {
-    col_to_rename <- "Activity"
-  }
-  
-  data <- data %>% select(-(setdiff(cols_to_remove, col_to_rename))) %>%
-    rename(Activity = col_to_rename)
-  
-  return(data)
-}
+# Function for testing performance ----------------------------------------
 
-# because I'm lazy and sometimes just run this script independently
-library(ggplot2)
-library(caret)
-library(data.table)
-library(tidyverse)
-
-
-# Function to generate and save a confusion matrix plot
-generate_confusion_plot <- function(conf_matrix_padded, base_path, save_path) {
+# Plot of confusion matric ------------------------------------------------
+generate_confusion_plot <- function(conf_matrix_padded, save_path) {
   
   # Extracting confusion matrix data and reshaping it
   conf_matrix_df <- as.data.frame(as.table(conf_matrix_padded))
@@ -61,37 +38,48 @@ compute_metrics <- function(predicted_classes, ground_truth_labels) {
   confusion_matrix <- table(predicted_classes, ground_truth_labels)
   all_classes <- union(levels(predicted_classes), levels(ground_truth_labels))
   
-  # Create a padded confusion matrix
+  # Create a padded confusion matrix (in case there are missing classes)
   conf_matrix_padded <- matrix(0, nrow = length(all_classes), ncol = length(all_classes),
                                dimnames = list(all_classes, all_classes))
   conf_matrix_padded[rownames(confusion_matrix), colnames(confusion_matrix)] <- confusion_matrix
   
   # Calculate F1 score and other metrics using confusionMatrix from caret
-  confusion_mtx <- confusionMatrix(conf_matrix_padded)
+  confusion_mtx <- caret::confusionMatrix(conf_matrix_padded)
   
-  # Extract precision, recall, F1-score, accuracy, and prevalence
+  byClass <- confusion_mtx$byClass
+  
+  # If binary, convert named vector to 1-row matrix first
+  # fails in the desantis_rattlesnake condition if I dont do this
+  if (is.null(dim(byClass))) {
+    byClass <- t(as.matrix(byClass))
+    rownames(byClass) <- colnames(conf_matrix_padded)[2]  # positive class
+  }
+  
   metrics <- data.frame(
-    Behaviour = rownames(confusion_mtx$byClass),  # Behaviour names (classes)
-    Precision = confusion_mtx$byClass[, "Precision"],
-    Recall = confusion_mtx$byClass[, "Recall"],
-    F1 = confusion_mtx$byClass[, "F1"],
-    Accuracy = confusion_mtx$byClass[, "Balanced Accuracy"],
-    Prevelance = confusion_mtx$byClass[, "Prevalence"] * length(predicted_classes)
+    Behaviour  = rownames(byClass),
+    Precision  = byClass[, "Precision"],
+    Recall     = byClass[, "Recall"],
+    F1         = byClass[, "F1"],
+    Accuracy   = byClass[, "Balanced Accuracy"],
+    Prevelance = byClass[, "Prevalence"] * length(predicted_classes),
+    row.names  = NULL
   )
   
   # Add macro-averaged metrics as the last row
+  # do not na.rm = TRUE otherwise the model can cheat and move towards not predicting classes at all
+  metrics[is.na(metrics)] <- 0
   metrics <- rbind(
     metrics,
     data.frame(
       Behaviour = "Macro-Average",
-      Precision = mean(metrics$Precision, na.rm = TRUE),
-      Recall = mean(metrics$Recall, na.rm = TRUE),
-      F1 = mean(metrics$F1, na.rm = TRUE),
-      Accuracy = mean(metrics$Accuracy, na.rm = TRUE),
+      Precision = mean(metrics$Precision),
+      Recall = mean(metrics$Recall),
+      F1 = mean(metrics$F1),
+      Accuracy = mean(metrics$Accuracy),
       Prevelance = NA
     )
   )
   
   return(list(metrics = metrics,
-           conf_matrix_padded = conf_matrix_padded))
+              conf_matrix_padded = conf_matrix_padded))
 }

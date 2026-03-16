@@ -1,5 +1,5 @@
 # Ignore these directories at any level
-raw_data/
+raw/
 
 # Ignore R history files
 *.Rhistory
