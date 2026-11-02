@@ -49,7 +49,7 @@ if (!file.exists(file.path(base_path, "Output", species, "FinalModel.rda"))) {
   )
   
   # save this model
-  saveRDS(RF_model, file.path(base_path, "Output", species, "FinalModel.rds"))
+  saveRDS(RF_model, file.path("Output", species, "FinalModel.rds"))
   
 } else {
   print("final model already generated")

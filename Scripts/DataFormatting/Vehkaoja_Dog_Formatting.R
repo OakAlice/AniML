@@ -5,10 +5,10 @@
 ## Basic formatting -------------------------------------------------------
 # this will be different for every dataset
 
-if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))){
+if(!file.exists(file.path("Data", species, "Formatted_raw_data.csv"))){
   
   # i just stitch the data together
-  files <- list.files(file.path(base_path, "Data", species, "raw_data"), recursive = TRUE, full.names = TRUE)
+  files <- list.files(file.path("Data", species, "raw_data"), recursive = TRUE, full.names = TRUE)
   raw_data <- lapply(files, function(file) {
     df <- fread(file)
     df <- df %>% mutate(Time = row_number())
@@ -26,18 +26,18 @@ if(!file.exists(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
            Activity = V14)
   
   # save this 
-  fwrite(raw_data, file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
+  fwrite(raw_data, file.path("Data", species, "Formatted_raw_data.csv"))
   
 } else {
   print("training data already formatted")
 }
   
 ## Generate features ------------------------------------------------------
-if (file.exists(file.path(base_path, "Data", species, "Feature_data.csv"))){
+if (file.exists(file.path("Data", species, "Feature_data.csv"))){
   print("training features already generated")
 } else {
     
-  data1 <- fread(file.path(base_path, "Data", species, "Formatted_raw_data.csv"))
+  data1 <- fread(file.path("Data", species, "Formatted_raw_data.csv"))
     
   generated_features <- list()
   for (id in unique(data1$ID)){
@@ -53,9 +53,9 @@ if (file.exists(file.path(base_path, "Data", species, "Feature_data.csv"))){
                                      overlap_percent = desired_overlap)
       
     generated_features[[id]] <- feature_data
-    fwrite(feature_data, file.path(base_path, "Data", species, paste0(id, "_feature_data.csv")))
+    fwrite(feature_data, file.path("Data", species, paste0(id, "_feature_data.csv")))
   }
   generated_features_df <- bind_rows(generated_features)
-  fwrite(generated_features_df, file.path(base_path, "Data", species, "Feature_data.csv"))
+  fwrite(generated_features_df, file.path("Data", species, "Feature_data.csv"))
 }
   

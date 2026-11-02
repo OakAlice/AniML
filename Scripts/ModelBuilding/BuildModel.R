@@ -1,9 +1,9 @@
 # Master script for building the models for any given species etc ---------
 
-if (!file.exists(file.path(base_path, "Data", species, paste0("Training_predictions_", i, ".csv")))) {
+if (!file.exists(file.path("Data", species, paste0("Training_predictions_", i, ".csv")))) {
   
 # Split out test data -----------------------------------------------------
-data <- fread(file = file.path(base_path, "Data", species, "Feature_data.csv"))
+data <- fread(file = file.path("Data", species, "Feature_data.csv"))
 
 test_data <- data %>% dplyr::filter(ID %in% test_IDs)
 other_data <- data %>% dplyr::filter(!ID %in% test_IDs)                     
@@ -27,8 +27,8 @@ other_data <- data %>% dplyr::filter(!ID %in% test_IDs)
       )
     },
     bounds = bounds,
-    init_points = 2,
-    n_iter = 5,
+    init_points = 4,
+    n_iter = 10,
     acq = "ucb",
     kappa = 2.576 
   )
@@ -66,7 +66,7 @@ other_data <- data %>% dplyr::filter(!ID %in% test_IDs)
   )
   
   # save this model
-  saveRDS(RF_model, file.path(base_path, "Data", species, paste0("Activity_model_", i, ".rds")))
+  saveRDS(RF_model, file.path("Data", species, paste0("Activity_model_", i, ".rds")))
 
 # Make predictions --------------------------------------------------------
 test_feature_data <- as.data.table(test_data)
@@ -124,7 +124,7 @@ metrics <- compute_metrics(predicted_classes = as.factor(predictions_df$predicte
                            ground_truth_labels = as.factor(predictions_df$true_class))
 
 # Write to CSV
-write.csv(predictions_df, file = file.path(base_path, "Data", species, paste0("Training_predictions_", i, ".csv")), row.names = FALSE)
+write.csv(predictions_df, file = file.path("Data", species, paste0("Training_predictions_", i, ".csv")), row.names = FALSE)
 
 } else {
   print("model and predictions made for this data")

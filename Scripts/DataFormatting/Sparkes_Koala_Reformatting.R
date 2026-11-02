@@ -1,9 +1,9 @@
 # Formatting the Sparkes_Koala data ---------------------------------------
-output_path <- file.path(base_path, "Data", species, "Formatted_raw_data.csv")
+output_path <- file.path("Data", species, "Formatted_raw_data.csv")
 # Read in and rename the data ---------------------------------------------
 if(!file.exists(output_path)){
   
-  data <- fread(file.path(base_path, "Data/Sparkes_Koala/raw/labelled_data.csv"))
+  data <- fread(file.path("Data/Sparkes_Koala/raw/labelled_data.csv"))
   
   data <- data %>% 
     dplyr::rename(X = Accelerometer.X,
