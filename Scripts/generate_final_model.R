@@ -24,7 +24,7 @@ if (!file.exists(file.path(base_path, "Output", species, "FinalModel.rda"))) {
   # clean the data
   data <- fread(file = file.path(base_path, "Data", species, "Feature_data.csv"))
   
-  clean_cols <- removeBadFeatures(data, var_threshold = 0.3, corr_threshold = 0.9)
+  clean_cols <- clean_features(data, var_threshold = 0.3, corr_threshold = 0.9)
   data <- data %>%
     select(c(!!!syms(clean_cols), "Activity")) %>%
     na.omit() %>%

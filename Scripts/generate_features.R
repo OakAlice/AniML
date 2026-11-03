@@ -1,10 +1,10 @@
-# Generate Features -------------------------------------------------------
+# Code to generate features from all the data -----------------------------
 
-generate_features_master <- function(data, sample_rate, overlap_setting, window_setting){
+generate_features <- function(data, sample_rate, overlap_setting, window_setting){
   
   data <- as.data.table(data)
   data <- copy(data)[, row_id := .I]      # copy so the caller's raw_data isn't modified
-
+  
   feats <- list(); keys <- list()
   
   for (id in unique(data$ID)){
@@ -15,10 +15,9 @@ generate_features_master <- function(data, sample_rate, overlap_setting, window_
                                       overlap_percent = overlap_setting,
                                       available_axes = available_axes)
     feats[[id]] <- res$features
-    keys[[id]]  <- res$key
   }
   
-  list(features = rbindlist(feats), key = rbindlist(keys))
+  return(features = rbindlist(feats))
 }
 
 # Function to process data for each ID
