@@ -11,8 +11,10 @@ tune_model <- function(features, k_folds = 3, model = 'RF', bounds = 'default', 
     group = sample(rep(1:k_folds, length.out = length(ids)))
   )
   
-  metrics <- vector("list", k_folds)
-  parameters <- vector("list", k_folds) # blank list to store the results of the loop
+  metrics <- vector("list", k_folds) # performance
+  plots <- vector("list", k_folds) # confusion plots
+  parameters <- vector("list", k_folds) # the hyperparameters
+  
   for (i in seq_len(k_folds)){
     
     test_IDs <- ID_groups$ID[ID_groups$group == i]
@@ -33,6 +35,7 @@ tune_model <- function(features, k_folds = 3, model = 'RF', bounds = 'default', 
         model_optimisation(
           feature_data = other_data,
           optimisation_metric = optimisation_metric,
+          k_folds = 3, # hardcoding this
           number_trees = number_trees,
           mtry = mtry,
           max_depth = max_depth
@@ -46,10 +49,12 @@ tune_model <- function(features, k_folds = 3, model = 'RF', bounds = 'default', 
     )
     
     # extract the best ones
-    best_mtry <- round(results$Best_Par[["mtry"]],0)
-    best_number_trees <- round(results$Best_Par[["number_trees"]],0)
-    best_max_depth <- round(results$Best_Par[["max_depth"]],0)
-    best_performance <- results$Best_Value # just for interest
+    if (model == 'RF'){
+      best_mtry <- round(results$Best_Par[["mtry"]],0)
+      best_number_trees <- round(results$Best_Par[["number_trees"]],0)
+      best_max_depth <- round(results$Best_Par[["max_depth"]],0)
+      best_performance <- results$Best_Value # just for interest
+    }
     
     # prepare all of the training data
     clean_cols <- clean_features(other_data, var_threshold = 0.3, corr_threshold = 0.9)
@@ -63,6 +68,9 @@ tune_model <- function(features, k_folds = 3, model = 'RF', bounds = 'default', 
     class_weights <- 1 / class_freq
     class_weights <- class_weights / sum(class_weights)
     weight <- as.numeric(class_weights[as.character(training_data$Activity)])
+    
+    # just check the mtry
+    best_mtry <- max(1, min(round(best_mtry), length(clean_cols)))
     
     # make a model
     if (model == 'RF'){
@@ -97,24 +105,21 @@ tune_model <- function(features, k_folds = 3, model = 'RF', bounds = 'default', 
       ground_truth_labels = factor(predictions_df$Activity, levels = lv)
     )
     
-    fold_parameters <- data.frame(fold = i, mtry = best_mtry,
+    fold_confusion <- generate_confusion_plot(fold_metrics$conf_matrix_padded)
+    
+    fold_parameters <- data.frame(fold = i, 
+                                  mtry = best_mtry,
                                   num_trees = best_number_trees,
                                   max_depth = best_max_depth)
     
     # return everything from the fold
     metrics[[i]] <- fold_metrics$metrics
     parameters[[i]] <- fold_parameters
+    plots[[i]] <- fold_confusion
   }
   
-  return(list(metrics = metrics, parameters = parameters))
+  return(list(metrics = metrics, parameters = parameters, confusion_plots = plots))
 }
-
-
-
-
-
-
-
 
 # remove redundant and NA columns
 clean_features <- function(feature_data, var_threshold, corr_threshold) {
@@ -137,99 +142,94 @@ clean_features <- function(feature_data, var_threshold, corr_threshold) {
   return(remaining_features)
 }
 
-# main call that splits data, generates function, and validates
-model_optimisation <- function(feature_data, optimisation_metric, number_trees, mtry, max_depth, k_folds){
+
+get_score <- function(fold_metrics, optimisation_metric = "F1") {
+  m <- fold_metrics$metrics
+  stopifnot(optimisation_metric %in% names(m))
+  m[[optimisation_metric]][m$Behaviour == "Macro-Average"]
+}
+
+model_optimisation <- function(feature_data, optimisation_metric, k_folds = 3, number_trees, mtry, max_depth) {
+  
+  # BO proposes continuous values
+  number_trees <- round(number_trees)
+  max_depth    <- round(max_depth)
   
   # remove bad features
   feature_data <- as.data.table(feature_data)
   clean_cols <- clean_features(feature_data, var_threshold = 0.3, corr_threshold = 0.9)
-  clean_feature_data <- feature_data %>% select(c(!!!syms(clean_cols), "Activity", "ID", "Time")) %>% na.omit()
+  clean_cols <- setdiff(clean_cols, c("Activity", "ID", "Time")) # ensure it doesnt include these ones... though I'm pretty sure it doesnt
+  clean_feature_data <- feature_data %>%
+    select(c(!!!syms(clean_cols), "Activity", "ID", "Time")) %>%
+    na.omit() %>%
+    as.data.frame()
   
-  if (mtry > length(clean_cols)-1){
-    message("mtry too big, making max clean cols")
-    flush.console()
-    mtry <- length(clean_cols)
-  }
+  mtry <- max(1, min(round(mtry), length(clean_cols)))
   
-  scores <- vector("list", k_folds)
-  # Repeat the process 3 times
-  for (i in seq_len(k_folds)) {
-   
-    tryCatch({
-      # Create training and validation data, split by ID
-      test_IDs <- sample(unique(clean_feature_data$ID), ceiling(0.3*length(unique(clean_feature_data$ID))))
-      
-      # Separate into training and testing
-      validation_data <- clean_feature_data %>% dplyr::filter(ID %in% test_IDs)
-      training_data <- clean_feature_data %>% dplyr::filter(!ID %in% test_IDs)                      
-      training_data <- training_data %>% select(-c(ID, Time)) %>%  mutate(Activity = as.factor(Activity))
-      validation_data <- validation_data %>% select(-c(ID, Time)) %>% mutate(Activity = as.factor(Activity))
-      
-    }, error = function(e) {
-      message("Error in data splitting: ", e$message)
-    })
+  ids    <- unique(clean_feature_data$ID)
+  scores <- rep(NA_real_, k_folds)
+  
+  for (j in seq_len(k_folds)) {
     
-    # Train RF model
-    tryCatch({
+    scores[j] <- tryCatch({
       
-      # weight by class frequency
+      # split by ID: random ~30% of individuals held out
+      test_IDs <- sample(ids, ceiling(0.3 * length(ids)))
+      
+      training_data <- clean_feature_data %>%
+        dplyr::filter(!ID %in% test_IDs) %>%
+        select(-c(ID, Time)) %>%
+        mutate(Activity = as.factor(Activity))
+      
+      validation_data <- clean_feature_data %>%
+        dplyr::filter(ID %in% test_IDs) %>%
+        select(-c(ID, Time)) %>%
+        mutate(Activity = factor(Activity, levels = levels(training_data$Activity)))
+      
+      predictors <- setdiff(names(training_data), "Activity") 
+      mtry_i <- max(1, min(round(mtry), length(predictors)))
+      test_features <- validation_data[, predictors, drop = FALSE] 
+      
+      # class-frequency weights
       class_freq <- table(training_data$Activity)
       class_weights <- 1 / class_freq
       class_weights <- class_weights / sum(class_weights)
-      weight <- class_weights[training_data$Activity]
+      weight <- as.numeric(class_weights[as.character(training_data$Activity)])
       
-      RF_model <- ranger(
+      trained_model <- ranger(
         dependent.variable.name = "Activity",
-        data = training_data,
-        num.trees = number_trees,
-        mtry = mtry,
-        max.depth = max_depth,
-        sample.fraction = 1, # select all the data (small datasets will fail otherwise)
-        classification = TRUE,
-        importance = "impurity",
-        case.weights = weight
+        data            = training_data,
+        num.trees       = number_trees,
+        mtry            = mtry,
+        max.depth       = max_depth,
+        sample.fraction = 1,        # small datasets fail otherwise
+        classification  = TRUE,
+        probability     = TRUE,     # gives the probability matrix
+        importance      = "impurity",
+        case.weights    = weight
       )
       
-    }, error = function(e) {
-      message("Error in RF training: ", e$message)
-      stop()
-    })
-    
-    #### Validate the model
-    tryCatch({
-      numeric_validation_data <- as.matrix(validation_data[, !names(validation_data) %in% c("Activity"), with = FALSE])
-      ground_truth_labels <- validation_data$Activity
-
-      numeric_validation_data <- as.data.frame(numeric_validation_data)
-      
-      output <- predict(trained_model, data = test_features)
-      predictions <- output$predictions
+      test_features <- validation_data[, clean_cols, drop = FALSE]
+      predictions <- predict(trained_model, data = test_features)$predictions
       lv <- colnames(predictions)
       predicted_class <- factor(lv[max.col(predictions, ties.method = "first")], levels = lv)
-      predictions_df <- cbind(testing_metadata, predictions, predicted_class)
       
       fold_metrics <- compute_metrics(
-        predicted_classes   = predictions_df$predicted_class,
-        ground_truth_labels = factor(predictions_df$Activity, levels = lv)
+        predicted_classes = predicted_class,
+        ground_truth_labels = factor(validation_data$Activity, levels = lv),
+        probabilities = predictions
       )
       
+      get_score(fold_metrics, optimisation_metric)
+      
     }, error = function(e) {
-      message("Error in making predictions: ", e$message)
+      message("Error in inner fold ", j, ": ", conditionMessage(e))
       flush.console()
-      stop()
+      NA_real_
     })
-    
-    # Store the F1 score
-    scores[[i]] <- fold_metrics$metrics$F1[fold_metrics$metrics$Behaviour == "Macro-Average"]
   }
   
-  #### Calculate average F1-scors
-  # same NA problem
-  final_scores <- unlist(scores)
-  final_scores[is.na(final_scores)] <- 0 # set to 0 as penalty if missing
-  average_macro <- mean(final_scores)
-  
-  # no preds for this one
-  return(list(Score = average_macro, Pred = NA))
+  scores[is.na(scores)] <- 0 # penalty for failed or undefined folds
+  list(Score = mean(scores), Pred = 0)
 }
 

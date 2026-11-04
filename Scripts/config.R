@@ -17,7 +17,7 @@ pacman::p_load(
 )
 
 available_axes <- c("X", "Y", "Z")
-species <- "Sparkes_Koala"
+species <- "Annett_Kangaroo"
 sample_rate <- 50
 window_length <- 2
 overlap_percent <- 0
@@ -30,7 +30,32 @@ hpo_bounds <- list(
 )
 
 # Functions ---------------------------------------------------------------
-source(file = file.path("Scripts", "PlottingFunctions.R"))
-source(file = file.path("Scripts", "DataFormatting", "GenerateFeatures_Functions.R"))
-source(file = file.path("Scripts", "ModelBuilding", "PerformanceTestingFunctions.R"))
-source(file = file.path("Scripts", "ModelBuilding", "HPOFunctions.R"))
+source(file = file.path("Scripts", "generate_features.R"))
+source(file = file.path("Scripts", "preprocessing.R"))
+source(file = file.path("Scripts", "performance_testing.R"))
+source(file = file.path("Scripts", "generate_final_model.R"))
+source(file = file.path("Scripts", "tune_model.R"))
+
+# Plot stuff --------------------------------------------------------------
+my_theme <- function() {
+  theme_minimal(base_size = 12) +
+    theme(
+      panel.border = element_rect(color = "black", linewidth = 1.5, fill = NA),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.background = element_blank(),
+      panel.background = element_blank(),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black")
+    )
+}
+
+# Colours -----------------------------------------------------------------
+my_colours = c("grey37",
+               "coral", 
+               "goldenrod2", 
+               "khaki2", 
+               "aquamarine3", 
+               "powderblue", 
+               "plum", 
+               "lightpink1")

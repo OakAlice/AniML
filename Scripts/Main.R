@@ -10,7 +10,10 @@ source("Scripts/config.R")
 # Format Data -------------------------------------------------------------
 # This will be a custom script you write for your dataset that coerces it into the expected format
 # Expected format: Time (as POSIXct), ID, Activity, X, Y, Z
-source(file = file.path("Scripts", "DataFormatting", paste0(species, "_Formatting.R")))
+# source(file = file.path("Scripts", "DataFormatting", paste0(species, "_Formatting.R")))
+
+# Relabelling -------------------------------------------------------------
+# relabelling the classes if necessary (hasn't been done yet)
 
 # Preprocessing -----------------------------------------------------------
 data <- fread(file.path("Data", species, "Formatted_raw_data.csv"))
@@ -23,28 +26,15 @@ features <- generate_features(processed, sample_rate, overlap_percent, window_le
 fwrite(features, file.path("Data", species, "Feature_data.csv"))
 
 # Tune test possible models -----------------------------------------------
-tuning_metrics <- tune_model(features)
-# inspect the metrics to select final parameters
+tuning_metrics <- tune_model(features, k_folds = 3, model = 'RF', bounds = 'default', optimisation_metric = 'F1')
 
-
-
-# Write to CSV
-write.csv(metrics$metrics, file = file.path(base_path, "Data", species, paste0("Original_performance_metrics_", i, ".csv")), row.names = FALSE)
-write.csv(predictions_df, file = file.path(base_path, "Data", species, paste0("Original_predictions_", i, ".csv")), row.names = FALSE)
-
-
-
-
-
-
-
+# inspect the metrics to select final parameters... # I should figure out how to automate this... if it's even necessary
+parameters <- list(mtry = 11, num_trees = 600, max_depth = 10)
 
 # Train the final model ---------------------------------------------------
-# Take the average of the performance of the previous models and generate a final model
 # This will be what's used on the unlabelled data
-#TODO: Find better way of deciding on parameters rather than averaging
-source(file = file.path("Scripts", "ModelBuilding", "GenerateFinalModel.R"))
-
+final_model <- generate_final_model(features, parameters)
+saveRDS(final_model, file.path("Output", species, "Final_model.rds"))
 
 # Postprocessor -----------------------------------------------------------
 

@@ -14,7 +14,7 @@ preprocessing <- function(data){
 }
 
 
-standardise_rotation <- function(data, axes = c("X", "Y", "Z"), target_sign = -1, plot = TRUE, beh = "Locomotion") {
+standardise_rotation <- function(data, axes = c("X", "Y", "Z"), target_sign = -1, plot = TRUE, beh = "Hopping") {
   
   dt <- copy(as.data.table(data))
   cross <- function(a, b) c(a[2]*b[3] - a[3]*b[2],
@@ -50,10 +50,16 @@ standardise_rotation <- function(data, axes = c("X", "Y", "Z"), target_sign = -1
   
   grav_after <- dt[, lapply(.SD, median, na.rm = TRUE), by = ID, .SDcols = axes]
   
+  
+  
+  
+
+  
+  
   if (plot) {
     
     # plot a contiguous walking snippet per individual, before vs after
-    n_win <- 400   # samples per snippet
+    n_win <- 2000   # samples per snippet
     set.seed(1)
     
     # row indices (within each ID) of a random contiguous walking run of n_win samples
@@ -79,7 +85,7 @@ standardise_rotation <- function(data, axes = c("X", "Y", "Z"), target_sign = -1
     }, by = ID]
     
     if (nrow(pick) == 0) {
-      message("No 'Walking' samples found; skipping Plot 3.")
+      message("No samples for this behaviour (define the beh in the function).")
     } else {
       # map within-ID row index back to global row index
       dt[, .rid := seq_len(.N), by = ID]
@@ -106,12 +112,76 @@ standardise_rotation <- function(data, axes = c("X", "Y", "Z"), target_sign = -1
     }
   }
   
-  # sanity check printed to console
-  message("Dominant gravity axis per ID (before rotation):")
-  print(data.table(ID = names(rot_list), Dominant = sapply(rot_list, `[[`, "dominant")))
-  message("Median Y after rotation (should have sign ", target_sign, "):")
-  print(grav_after[, .(ID, Y)])
-  
   attr(dt, "rotations") <- lapply(rot_list, `[[`, "R")
   dt[]
 }
+
+
+
+
+# Figuring stuff out ------------------------------------------------------
+
+# find gravity based on the static behaviours
+dt <- copy(as.data.table(data))
+static <- dt[Activity %in% c("CrouchStanding", "PendStanding"), ]   # adjust to your static labels
+
+static[, .(
+  mX = mean(X), mY = mean(Y), mZ = mean(Z),
+  norm = sqrt(mean(X)^2 + mean(Y)^2 + mean(Z)^2),
+  n = .N
+), by = ID]
+
+
+
+static_sample <- dt %>%
+  mutate(row = row_number()) %>%
+  group_by(ID, Activity) %>% 
+  slice_head(n = 4000)
+
+ggplot(static_sample, aes(x = row)) +
+  geom_path(aes(y = X, colour = "X")) + 
+  geom_path(aes(y = Y, colour = "Y")) + 
+  geom_path(aes(y = Z, colour = "Z")) + 
+  my_theme() + facet_wrap(Activity~ID, scales = "free_x")
+
+
+
+
+plotTraceExamples(behaviours = unique(dt$Activity), 
+                  data = dt, 
+                  individuals = 5, 
+                  n_samples = 300, 
+                  n_col = 2)
+
+
+
+
+# the non-rotated version
+dt <- copy(as.data.table(data))
+
+normal <- dt %>% dplyr::filter(Activity == "Hopping") %>%
+  mutate(row = row_number()) %>%
+  group_by(ID) %>% 
+  slice_head(n = 1000)
+  
+ggplot(normal, aes(x = row)) +
+  geom_path(aes(y = X, colour = "X")) + 
+  geom_path(aes(y = Y, colour = "Y")) + 
+  geom_path(aes(y = Z, colour = "Z")) + 
+  my_theme() + facet_wrap(~ID, scales = "free_x")
+
+
+# rotated Cahuna
+dt_rot <- copy(dt)
+dt_rot[ID == "BigCahuna", `:=`(X = Z, Z = X)]
+
+rot <- dt_rot %>% dplyr::filter(Activity == "Hopping") %>%
+  mutate(row = row_number()) %>%
+  group_by(ID) %>% 
+  slice_head(n = 1000)
+
+ggplot(rot, aes(x = row)) +
+  geom_path(aes(y = X, colour = "X")) + 
+  geom_path(aes(y = Y, colour = "Y")) + 
+  geom_path(aes(y = Z, colour = "Z")) + 
+  my_theme() + facet_wrap(~ID, scales = "free_x")
