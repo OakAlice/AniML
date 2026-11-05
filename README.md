@@ -1,21 +1,17 @@
-# LittleAniMLs
+# AniML
 
-This repository contains a minimal pipeline for developing a supervised machine learning animal behaviour classifier for small datasets. Works for larger datasets as well. 
+This repository contains a pipeline for developing a supervised machine learning animal behaviour classifier, with added functionality for small datasets specifically. 
 
 ![Workflow](/Figures/Workflow.png)
 
-1. Initial data exploration scripts used to determine optimal behavioural clusters. *[In Progress]*
-2. Synthetic data augmentation/boosting to increase counts of the minority classes. *[In Progress]*
-3. Machine learning scripts used for training, validating, and testing classifier (includ. data formatting, feature extraction, train-test splitting, and hyperparameter tuning for a limited set of hyperparameters for either multi-class Random Forest or binary-class SVMs). *[Complete]*
-4. Prediction results can be plugged into post-processing workflow developed [here](https://github.com/OakAlice/PostProcessing). *[Complete]*
-5. To reconstruct exact movement paths via dead-reckoning, calibrated magnetometer and gyroscope data is required. More information can be found [here](https://github.com/OakAlice/IntegratedCollarAnalysis/tree/main). Otherwise, GPS can be used to give general location infomation. *[In Progress]*
+1. Initial data exploration scripts used to determine optimal behavioural clusters.
+2. Synthetic data augmentation to increase counts of the minority classes.
+3. Machine learning scripts used for tuning and testing a classifier.
+4. Sequence-informed post-processing.
 
 Worked example provided. Example data sourced from one of my collaborations --- [Sparkes et al., 2025](https://www.mdpi.com/2076-2615/15/24/3537) --- looking at the ground-traverse behaviour of koalas.
 
 ---
-## Folder structure
-*Have to fill this in*
-
 ## Using this workflow
 *Have to fill this in*
 
