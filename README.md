@@ -13,7 +13,7 @@ Worked example provided. Example data sourced from one of my collaborations --- 
 
 ---
 ## Using this workflow
-*Have to fill this in*
+Instructions on how to use this repo can be found ####
 
 **Notes**
 - Models are weighted by class prevelance. You may want to change the way they are weighted, or initialise some kind of balancing between classes.
