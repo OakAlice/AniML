@@ -17,7 +17,8 @@ source("Scripts/config.R")
 
 # Preprocessing -----------------------------------------------------------
 data <- fread(file.path("Data", species, "Formatted_raw_data.csv"))
-processed <- preprocessing(data)
+# processed <- preprocessing(data)
+processed <- data
 
 # will include augmentation
 
@@ -26,7 +27,7 @@ features <- generate_features(processed, sample_rate, overlap_percent, window_le
 fwrite(features, file.path("Data", species, "Feature_data.csv"))
 
 # Tune test possible models -----------------------------------------------
-tuning_metrics <- tune_model(features, k_folds = 3, model = 'RF', bounds = 'default', optimisation_metric = 'F1')
+tuning_metrics <- tune_model(features, k_folds = 3, inits = 2, rounds = 5, model = 'RF', bounds = 'default', optimisation_metric = 'F1')
 
 # inspect the metrics to select final parameters... # I should figure out how to automate this... if it's even necessary
 parameters <- list(mtry = 11, num_trees = 600, max_depth = 10)
@@ -37,6 +38,9 @@ final_model <- generate_final_model(features, parameters)
 saveRDS(final_model, file.path("Output", species, "Final_model.rds"))
 
 # Postprocessor -----------------------------------------------------------
+
+
+
 
 
 # Apply to the unlabelled data --------------------------------------------

@@ -10,10 +10,10 @@ generate_final_model <- function(data, parameters){
     mutate(Activity = as.factor(Activity))
   
   # weight by class frequency
-  class_freq <- table(data$Activity)
+  class_freq <- table(dt$Activity)
   class_weights <- 1 / class_freq
   class_weights <- class_weights / sum(class_weights)
-  weight <- class_weights[data$Activity]
+  weight <- class_weights[dt$Activity]
   
   final_model <- ranger(
     dependent.variable.name = "Activity",

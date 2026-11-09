@@ -1,6 +1,6 @@
 # Master script for building the models for any given species etc ---------
 
-tune_model <- function(features, k_folds = 3, model = 'RF', bounds = 'default', optimisation_metric = 'weighted_F1'){
+tune_model <- function(features, k_folds = 3, inits = 5, rounds = 10, model = 'RF', bounds = 'default', optimisation_metric = 'weighted_F1'){
   #' optimisation_metric (string | options: weighted_F1, F1, ROC_AUC): what the HPO is optimising for
   
   dt <- copy(features)
@@ -42,8 +42,8 @@ tune_model <- function(features, k_folds = 3, model = 'RF', bounds = 'default', 
         )
       },
       bounds = hpo_bounds,
-      init_points = 4,
-      n_iter = 10,
+      init_points = inits,
+      n_iter = rounds,
       acq = "ucb",
       kappa = 2.576
     )
@@ -151,14 +151,13 @@ get_score <- function(fold_metrics, optimisation_metric = "F1") {
 
 model_optimisation <- function(feature_data, optimisation_metric, k_folds = 3, number_trees, mtry, max_depth) {
   
-  # BO proposes continuous values
+  # BO proposes continuous values so just round them to whatever
   number_trees <- round(number_trees)
-  max_depth    <- round(max_depth)
+  max_depth <- round(max_depth)
   
   # remove bad features
   feature_data <- as.data.table(feature_data)
   clean_cols <- clean_features(feature_data, var_threshold = 0.3, corr_threshold = 0.9)
-  clean_cols <- setdiff(clean_cols, c("Activity", "ID", "Time")) # ensure it doesnt include these ones... though I'm pretty sure it doesnt
   clean_feature_data <- feature_data %>%
     select(c(!!!syms(clean_cols), "Activity", "ID", "Time")) %>%
     na.omit() %>%
@@ -166,7 +165,7 @@ model_optimisation <- function(feature_data, optimisation_metric, k_folds = 3, n
   
   mtry <- max(1, min(round(mtry), length(clean_cols)))
   
-  ids    <- unique(clean_feature_data$ID)
+  ids <- unique(clean_feature_data$ID)
   scores <- rep(NA_real_, k_folds)
   
   for (j in seq_len(k_folds)) {

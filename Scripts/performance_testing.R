@@ -58,7 +58,6 @@ compute_metrics <- function(predicted_classes, ground_truth_labels, probabilitie
     for (cl in intersect(all_classes, colnames(probabilities))) {
       y <- as.character(ground_truth_labels) == cl
       p <- probabilities[, cl]
-      if (sum(y) == 0 || sum(!y) == 0) next  # class absent (or only class): AUC undefined
       
       roc_auc[cl] <- tryCatch(
         as.numeric(pROC::auc(pROC::roc(response = y, predictor = p,
