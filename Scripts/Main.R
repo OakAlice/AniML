@@ -7,37 +7,49 @@
 setwd("C:/Users/oaw001/OneDrive - University of the Sunshine Coast/AniML")
 source("Scripts/config.R")
 
-# Format Data -------------------------------------------------------------
-# This will be a custom script you write for your dataset that coerces it into the expected format
-# Expected format: Time (as POSIXct), ID, Activity, X, Y, Z
-# source(file = file.path("Scripts", "DataFormatting", paste0(species, "_Formatting.R")))
+# Expected format for data is data.table with 1 row per time observation
+# Columns: ID, Time, Activity, X, Y, Z
+data <- fread(file.path("Data", species, "Formatted_raw_data.csv"))
 
 # Relabelling -------------------------------------------------------------
 # relabelling the classes if necessary (hasn't been done yet)
 
 # Preprocessing -----------------------------------------------------------
-data <- fread(file.path("Data", species, "Formatted_raw_data.csv"))
 # processed <- preprocessing(data)
-processed <- data
 
-# will include augmentation
+# Augment minority classes ------------------------------------------------
+# boosted <- boost_minority_classes(processed)
+boosted <- data
 
 # Generate features -------------------------------------------------------
-features <- generate_features(processed, sample_rate, overlap_percent, window_length)
+features <- generate_features(boosted, sample_rate, overlap_percent, window_length)
 fwrite(features, file.path("Data", species, "Feature_data.csv"))
 
 # Tune test possible models -----------------------------------------------
 tuning_metrics <- tune_model(features, k_folds = 3, inits = 2, rounds = 5, model = 'RF', bounds = 'default', optimisation_metric = 'F1')
 
 # inspect the metrics to select final parameters... # I should figure out how to automate this... if it's even necessary
-parameters <- list(mtry = 11, num_trees = 600, max_depth = 10)
+# parameters <- list(mtry = 11, num_trees = 600, max_depth = 10)
+parameters <- list(mtry = 2, num_trees = 500, max_depth = 15) # default option 
 
 # Train the final model ---------------------------------------------------
 # This will be what's used on the unlabelled data
-final_model <- generate_final_model(features, parameters)
+final_model <- generate_final_model(features, model = 'RF', parameters)
 saveRDS(final_model, file.path("Output", species, "Final_model.rds"))
 
+# Make predictions on unlabelled data -------------------------------------
+# data is expected to be in the same format as the labelled training data (except no Activity column)
+# if the deployment was long, likely need to process one ID * week combo at a time.
+unlabelled_data <- fread(file.path("Data", species, "Formatted_unlabelled_data.csv"))
+unlabelled_features <- generate_features(unlabelled_data, sample_rate, overlap_percent, window_length)
+fwrite(unlabelled_features, file.path("Data", species, "Unlabelled_Feature_data.csv"))
+
+final_predictions <- generate_predictions(final_model, model = 'RF', unlabelled_features)
+fwrite(final_predictions, file.path("Data", species, "Unlabelled_predictions.csv"))
+
 # Postprocessor -----------------------------------------------------------
+
+
 
 
 

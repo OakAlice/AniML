@@ -3,7 +3,7 @@
 generate_features <- function(data, sample_rate, overlap_setting, window_setting){
   
   data <- as.data.table(data)
-  data <- copy(data)[, row_id := .I]      # copy so the caller's raw_data isn't modified
+  data <- copy(data)[, row_id := .I]
   
   feats <- list(); keys <- list()
   

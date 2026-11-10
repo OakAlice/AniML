@@ -35,6 +35,7 @@ source(file = file.path("Scripts", "preprocessing.R"))
 source(file = file.path("Scripts", "performance_testing.R"))
 source(file = file.path("Scripts", "generate_final_model.R"))
 source(file = file.path("Scripts", "tune_model.R"))
+source(file = file.path("Scripts", "make_predictions.R"))
 
 # Plot stuff --------------------------------------------------------------
 my_theme <- function() {

@@ -1,6 +1,6 @@
-# AniML
+# aniML
 
-This repository contains a pipeline for developing a supervised machine learning animal behaviour classifier, with added functionality for small datasets specifically. 
+The **aniML** R-package is designed as a user-friendly, ecologist-focused end-to-end pipeline for accelerometer-based animal behaviour supervised machine learning classification with specific functionality for small datasets.
 
 ![Workflow](/Figures/Workflow.png)
 
@@ -12,8 +12,5 @@ This repository contains a pipeline for developing a supervised machine learning
 Worked example provided. Example data sourced from one of my collaborations --- [Sparkes et al., 2025](https://www.mdpi.com/2076-2615/15/24/3537) --- looking at the ground-traverse behaviour of koalas.
 
 ---
-## Using this workflow
-Instructions on how to use this repo can be found ####
-
-**Notes**
-- Models are weighted by class prevelance. You may want to change the way they are weighted, or initialise some kind of balancing between classes.
+## Instructions and guides
+Instructions on how to use this package can be found in the [overview](/Guides/overview.md). 

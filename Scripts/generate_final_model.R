@@ -1,5 +1,5 @@
 # Generate the final model, to be used on the unlabelled data -------------
-generate_final_model <- function(data, parameters){
+generate_final_model <- function(data, model = 'RF', parameters){
   
   dt <- copy(data)
   
