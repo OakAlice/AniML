@@ -5,10 +5,10 @@ The purpose of the aniML guide is to provide a complete and well-validated accel
 The following guides introduce the philosophy and pragmatics of behavioural classification with aniML. The guides are intended to give a sufficient overview of the goals and pitfalls of behaviour classification machine learning and the practical usage of the aniML package without being exhaustive. Instructions are intended for R- and data-literate ecologists with assumed little-to-no prior experience with machine learning specifically.
 
 ## General guides
-1. [Introduction](/Guides/introduction.md) A general introduction to accelerometer-based animal behaviour classification and supervised machine learning theory.
-2. [Small data](/Guides/small_data_tricks.md) A focused dive into the limitations and workarounds of small datasets specifically.
-3. [aniML user's guide](/Guides/aniML_users_guide.md) Step-by-step guide to using the aniML package for behaviour classification.
 
-## Specific guides and workthroughs
-1. [Designing training data](/Guides/CreatingTrainingData/)
+These will be the inbtroductions and overviews.
 
+
+## Case studies
+
+Worked examples and vingettes
