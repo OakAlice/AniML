@@ -6,7 +6,7 @@ Accelerometers are devices that measure instantaneous accelerations, including g
 Accelerometer-based animal behaviour classification was first trialled with Adelia penguins in the early 2000s (Yoda et al., 2021) where the changes in measurement of gravity enabled the body orientation of the penguins to be differentiated and therefore land (upright) vs water (horizontal) behaviours differentiated (Figure 1). 
 
 <p align="center">
-  <img src="https://github.com/OakAlice/AniML/blob/main/Figures/penguins.png" alt="Penguins" width="50%">
+  <img src="https://github.com/OakAlice/AniML/blob/main/Figures/penguins.png" alt="Penguins" width="30%">
 </p>
 <p align="center"><em>Fig 1: The change in accelerometer axis measuring dominant "gravity" acceleration (direction denoted by yellow arrow), can be used to infer the body posture and therefore the behaviour of the penguin.</em></p>
 
@@ -20,14 +20,14 @@ Training is when labelled data is provided to the model in order to learn the ru
 Finally, this trained and validated model is applied to the unlabelled *deployment data* where the true classes are not known. These predictions are used to understand the ecology and behaviour of the animal.
 
 <p align="center">
-  <img src="https://github.com/OakAlice/AniML/blob/main/Figures/components_of_data.png" alt="General ML usage" width="80%">
+  <img src="https://github.com/OakAlice/AniML/blob/main/Figures/components_of_data.png" alt="General ML usage" width="95%">
 </p>
 <p align="center"><em>Fig 2: Labelled data is partitioned into training, tuning, and testing portions to build and validate a ML classification model. Finally, this model is applied to the unlabelled and unknown data from deployment.</em></p>
 
 Some model types -- typically deep learning models -- can input and predict on raw accelerometer data, but the models encountered in **aniML** are not this kind. **aniML** focuses on classical, statistical models which cannot deal with raw data. Instead, these models interpret data from *features* (Figure 3). Features are essentially just summarisations of the data contained within each *window*, where windows are consecutive segments of data. Windows partition continuous time-series data into discreet units. These windows can be *overlapping* (contain some of the same data in neighbouring windows) or *non-overlapping* (containing no shared data). 
 
 <p align="center">
-  <img src="https://github.com/OakAlice/AniML/blob/main/Figures/anatomy_of_data.png" alt="Key terms for understanding data preparation" width="80%">
+  <img src="https://github.com/OakAlice/AniML/blob/main/Figures/anatomy_of_data.png" alt="Key terms for understanding data preparation" width="40%">
 </p>
 <p align="center"><em>Fig 3: Anatomy of a feature window.</em></p>
 
