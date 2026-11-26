@@ -1,7 +1,10 @@
 # Master script for building the models for any given species etc ---------
 
-tune_model <- function(features, k_folds = 3, inits = 5, rounds = 10, model = 'RF', bounds = 'default', optimisation_metric = 'weighted_F1'){
+tune_model <- function(features, k_folds = 3, inits = 5, rounds = 10, model = 'RF', bounds = 'default', 
+                       target_classes,
+                       optimisation_macro = "Macro-Average", optimisation_metric = 'weighted_F1'){
   #' optimisation_metric (string | options: weighted_F1, F1, ROC_AUC): what the HPO is optimising for
+  #' target_classes (string, list): the classes which are most important to the ecologist
   
   dt <- copy(features)
   
@@ -34,7 +37,9 @@ tune_model <- function(features, k_folds = 3, inits = 5, rounds = 10, model = 'R
       FUN = function(number_trees, mtry, max_depth) {
         model_optimisation(
           feature_data = other_data,
+          target_classes = target_classes,
           optimisation_metric = optimisation_metric,
+          optimisation_macro = optimisation_macro,
           k_folds = 3, # hardcoding this
           number_trees = number_trees,
           mtry = mtry,
@@ -102,7 +107,8 @@ tune_model <- function(features, k_folds = 3, inits = 5, rounds = 10, model = 'R
     
     fold_metrics <- compute_metrics(
       predicted_classes   = predictions_df$predicted_class,
-      ground_truth_labels = factor(predictions_df$Activity, levels = lv)
+      ground_truth_labels = factor(predictions_df$Activity, levels = lv),
+      target_classes = target_classes
     )
     
     fold_confusion <- generate_confusion_plot(fold_metrics$conf_matrix_padded)
@@ -118,7 +124,13 @@ tune_model <- function(features, k_folds = 3, inits = 5, rounds = 10, model = 'R
     plots[[i]] <- fold_confusion
   }
   
-  return(list(metrics = metrics, parameters = parameters, confusion_plots = plots))
+  all_metrics <- rbindlist(metrics , idcol = "fold")
+  all_metrics$Behaviour <- gsub("Class: ", "", all_metrics$Behaviour)
+  all_parameters <- rbindlist(parameters)
+  
+  return(list(metrics = all_metrics, 
+              parameters = all_parameters, 
+              confusion_plots = plots))
 }
 
 # remove redundant and NA columns
@@ -143,13 +155,13 @@ clean_features <- function(feature_data, var_threshold, corr_threshold) {
 }
 
 
-get_score <- function(fold_metrics, optimisation_metric = "F1") {
+get_score <- function(fold_metrics, optimisation_macro = "Macro-Average", optimisation_metric = "F1") {
   m <- fold_metrics$metrics
   stopifnot(optimisation_metric %in% names(m))
-  m[[optimisation_metric]][m$Behaviour == "Macro-Average"]
+  m[[optimisation_metric]][m$Behaviour == optimisation_macro]
 }
 
-model_optimisation <- function(feature_data, optimisation_metric, k_folds = 3, number_trees, mtry, max_depth) {
+model_optimisation <- function(feature_data, target_classes, optimisation_metric, optimisation_macro, k_folds = 3, number_trees, mtry, max_depth) {
   
   # BO proposes continuous values so just round them to whatever
   number_trees <- round(number_trees)
@@ -216,10 +228,11 @@ model_optimisation <- function(feature_data, optimisation_metric, k_folds = 3, n
       fold_metrics <- compute_metrics(
         predicted_classes = predicted_class,
         ground_truth_labels = factor(validation_data$Activity, levels = lv),
-        probabilities = predictions
+        probabilities = predictions,
+        target_classes = target_classes
       )
       
-      get_score(fold_metrics, optimisation_metric)
+      get_score(fold_metrics, optimisation_macro, optimisation_metric)
       
     }, error = function(e) {
       message("Error in inner fold ", j, ": ", conditionMessage(e))
@@ -231,4 +244,3 @@ model_optimisation <- function(feature_data, optimisation_metric, k_folds = 3, n
   scores[is.na(scores)] <- 0 # penalty for failed or undefined folds
   list(Score = mean(scores), Pred = 0)
 }
-

@@ -8,7 +8,7 @@ generate_features <- function(data, sample_rate, overlap_setting, window_setting
   feats <- list(); keys <- list()
   
   for (id in unique(data$ID)){
-    res <- process_features_per_chunk(data[ID == id],
+    res <- process_features_per_chunk(raw_data = data[ID == id],
                                       features_type = c("timeseries", "statistical"),
                                       window_length = window_setting,
                                       sample_rate = sample_rate,
@@ -84,7 +84,7 @@ process_features_per_chunk <- function(raw_data, features_type = c("statistical"
   # window metadata
   win_ids <- paste0(raw_data$ID[1], "_", seq_len(nwin))
   meta <- list(win_id = win_ids, Time = raw_data$Time[starts],
-               ID = raw_data$ID[starts], Activity = NA_character_)
+               ID = raw_data$ID[starts])
   
   if ("Activity" %in% names(raw_data)) {
     f      <- factor(raw_data$Activity)

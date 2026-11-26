@@ -1,23 +1,56 @@
 # Preprocessing -----------------------------------------------------------
 # Rotate all individuals to the same orientation and then filter outliers
 
-preprocessing <- function(data){
+preprocessing <- function(data, sample_rate, scale, filter, rotate){
+  
+  if (scale){
+    data <- standardise_scale(data)
+  }
   
   # rotate all individuals to the same orientation
-  # rotated <- standardise_rotation(data)
+  if (rotate){
+    data <- standardise_rotation(data)
+  }
   
   # smooth
-  smoothed <- filter_noise(rotated)
+  if (filter){
+    data <- filter_noise(data, sample_rate)
+  }
+  
+  data <- data[, sequence := NULL]
   
   # return
-  return(smoothed)
+  return(data)
 }
 
 
-filter_noise <- function(data){
-  print("no preprocessing at this stage")
+filter_noise <- function(data, sample_rate, available_axes = c("X", "Y", "Z"),
+                         bw_cutoff = 5, bw_order = 4, max_break = 3) {
+  
+  data <- data.table::copy(data.table::as.data.table(data))
+  data <- data[stats::complete.cases(data[, ..available_axes])]   # only drop NAs in the axes
+  data.table::setorder(data, Time)
+  data <- identify_sequences(data, max_break = max_break)
+  data.table::setDT(data)
+  
+  bf      <- signal::butter(bw_order, bw_cutoff / (sample_rate / 2), type = "low")
+  min_len <- 3L * (bw_order + 1L) + 1L # hard minimum for filtfilt
+  
+  segments <- split(data, by = "sequence")
+  
+  filtered <- lapply(segments, function(df) {
+    if (nrow(df) < min_len) return(NULL) # too short to filter: drop
+    for (col in available_axes) {
+      data.table::set(df, j = col,
+                      value = as.numeric(signal::filtfilt(bf, df[[col]])))
+    }
+    df
+  })
+  
+  out <- data.table::rbindlist(filtered)
+  data.table::setorder(out, Time)
+  out[]
 }
-
 
 standardise_rotation <- function(data, axes = c("X", "Y", "Z"), target_sign = -1, plot = TRUE, beh = "Hopping") {
   
