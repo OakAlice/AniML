@@ -12,7 +12,7 @@ Data are expected to be in format of 1 row per time observation, with columns ID
 ### Exploration
 
 <p align="center">
-  <img src="https://github.com/OakAlice/AniML/blob/main/Guides/WorkedExample/Figs/plotTraceExample.png" alt="Examples from each behavioural class="30%">
+  <img src="https://github.com/OakAlice/AniML/blob/main/Guides/WorkedExample/Impala/Figs/plotTraceExample.png" alt="Examples from each behavioural class="30%">
 </p>
 <p align="center"><em>Fig 1: Examples from each behavioural class (row) from each individual (column) in the labelled data. Use this plot as a QA to check whether the behaviours confirm to expectation.</em></p>
 
@@ -48,7 +48,7 @@ Output from this function include confusion matrices, optimal parameters, and pe
 In this case, the performance of the impala model is around 0.62 macro-average F1.
 
 <p align="center">
-  <img src="https://github.com/OakAlice/AniML/blob/main/Guides/WorkedExample/Figs/confusionMatrix.png" alt="Example confusion matrix="30%">
+  <img src="https://github.com/OakAlice/AniML/blob/main/Guides/WorkedExample/Impala/Figs/confusionMatrix.png" alt="Example confusion matrix="30%">
 </p>
 <p align="center"><em>Fig 2: Example confusion matrix from one fold of the optimisation of the impala model. True class (as determined from the videos) are rows and predicted class (predicted by the model) are the columns. Values represent the number of true classes predicted per predicted class out of all true counts in that class. Colours represent percentage of each true class.</em></p>
 
@@ -84,11 +84,11 @@ These are now the final results.
 A few basic graphs can be generated.
 
 <p align="center">
-  <img src="https://github.com/OakAlice/AniML/blob/main/Guides/WorkedExample/Figs/behavioural_budget.png" alt="Behavioural budget="30%">
+  <img src="https://github.com/OakAlice/AniML/blob/main/Guides/WorkedExample/Impala/Figs/behavioural_budget.png" alt="Behavioural budget="30%">
 </p>
 <p align="center"><em>Fig 3: Behavioural budget for one day of one impala showing the proportion of each behaviour per hour.</em></p>
 
 <p align="center">
-  <img src="https://github.com/OakAlice/AniML/blob/main/Guides/WorkedExample/Figs/day_in_a_life.png" alt="One day of an impala represented in coloured bars="30%">
+  <img src="https://github.com/OakAlice/AniML/blob/main/Guides/WorkedExample/Impala/Figs/day_in_a_life.png" alt="One day of an impala represented in coloured bars="30%">
 </p>
 <p align="center"><em>Fig 4: Behavioural sequence of one day of one impala, represented as behaviour per second across each hour (row).</em></p>
