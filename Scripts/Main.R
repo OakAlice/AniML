@@ -9,7 +9,9 @@ unlabelled_data <- fread(file.path("Data", species, "Formatted_unlabelled_data.c
 
 # relabelling the classes if necessary (hasn't been done yet)
 
-# processed <- preprocessing(data)
+processed <- preprocessing(data, sample_rate, 
+                           scale = scaling, filter = filtering, rotate = rotating, 
+                           rotation_ref_data = data[data$ID %in% ref_individuals])
 
 features <- generate_features(data, sample_rate, overlap_percent, window_length)
 

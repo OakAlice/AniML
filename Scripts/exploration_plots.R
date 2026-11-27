@@ -54,7 +54,7 @@ plot_behaviour <- function(behaviour, n_samples, data) {
           axis.text.y = element_blank())
 }
 
-plotVolume <- function(data, frequency) {
+plotVolume <- function(data, frequency, palette) {
   summ <- data %>%
     dplyr::count(ID, Activity) %>%
     mutate(minutes = (n/frequency)/60)
@@ -65,7 +65,7 @@ plotVolume <- function(data, frequency) {
          y = "Minutes",
          fill = "ID") +
     my_theme() +
-    scale_fill_manual(values = aniML_colours) +
+    scale_fill_manual(values = palette) +
     theme(axis.line = element_blank(),
           axis.text.x = element_text(angle = 45, hjust = 1),
           panel.border = element_rect(color = "black", fill = NA),

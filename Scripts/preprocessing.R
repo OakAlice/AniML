@@ -1,7 +1,7 @@
 # Preprocessing -----------------------------------------------------------
 # Rotate all individuals to the same orientation and then filter outliers
 
-preprocessing <- function(data, sample_rate, scale, filter, rotate){
+preprocessing <- function(data, sample_rate, scale = FALSE, filter = FALSE, rotate = FALSE, rotation_ref_data = NULL){
   
   if (scale){
     data <- standardise_scale(data)
@@ -9,7 +9,8 @@ preprocessing <- function(data, sample_rate, scale, filter, rotate){
   
   # rotate all individuals to the same orientation
   if (rotate){
-    data <- standardise_rotation(data)
+    data <- standardise_rotation(data, 
+                                 rotation_ref_data)
   }
   
   # smooth
@@ -21,6 +22,69 @@ preprocessing <- function(data, sample_rate, scale, filter, rotate){
   
   # return
   return(data)
+}
+
+
+
+
+standardise_rotation <- function(data,
+                                 rotation_ref_data,
+                                 available_axes = c("X", "Y", "Z"),
+                                 win = 100L,              # 2 s at 50 Hz
+                                 max_n = 5e5) {
+  
+  other_data <- data.table::copy(data.table::as.data.table(data))
+  reference  <- data.table::as.data.table(rotation_ref_data)
+  
+  # gravity-based orientation frame: mean direction + main axis of posture variation
+  frame <- function(d) {
+    G <- as.matrix(d[, lapply(.SD, data.table::frollmean, n = win, align = "center"),
+                     .SDcols = available_axes])
+    G <- G[stats::complete.cases(G), , drop = FALSE]
+    if (nrow(G) < 100L) stop("Not enough complete data to estimate orientation")
+    M <- G[sample(nrow(G), min(nrow(G), max_n)), , drop = FALSE]
+    
+    m  <- colMeans(M)
+    e1 <- m / sqrt(sum(m^2))
+    pc <- stats::prcomp(M, center = TRUE)$rotation[, 1]
+    e2 <- pc - sum(pc * e1) * e1
+    e2 <- e2 / sqrt(sum(e2^2))
+    e3 <- c(e1[2] * e2[3] - e1[3] * e2[2],
+            e1[3] * e2[1] - e1[1] * e2[3],
+            e1[1] * e2[2] - e1[2] * e2[1])
+    list(F = cbind(e1, e2, e3), M = M)
+  }
+  
+  skew <- function(x) mean((x - mean(x))^3) / stats::sd(x)^3
+  
+  fr <- frame(reference)                                  # reference frame, computed once
+  
+  ids <- unique(other_data$ID)
+  rotations <- vector("list", length(ids))
+  names(rotations) <- ids
+  
+  for (id in ids) {
+    rows <- which(other_data$ID == id)
+    fd   <- frame(other_data[rows])                       # this individual only
+    
+    # PC sign is arbitrary: match skewness of the posture axis to the reference
+    if (sign(skew(fr$M %*% fr$F[, 2])) != sign(skew(fd$M %*% fd$F[, 2])))
+      fd$F[, 2:3] <- -fd$F[, 2:3]                         # keeps det = +1
+    
+    R <- fd$F %*% t(fr$F)                                 # maps this individual's axes into the reference axes
+    rotations[[as.character(id)]] <- R
+    message("Rotation for ", id, ":\n", paste(capture.output(print(round(R, 2))), collapse = "\n"))
+    
+    rot <- function(cols) {
+      rotated <- as.matrix(other_data[rows, ..cols]) %*% R
+      for (k in seq_along(cols))
+        data.table::set(other_data, i = rows, j = cols[k], value = rotated[, k])
+    }
+    rot(available_axes)
+  }
+  
+  attr(other_data, "rotations") <- rotations
+  return(other_data)
 }
 
 

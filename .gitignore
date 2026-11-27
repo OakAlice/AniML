@@ -3,3 +3,5 @@ raw/
 
 # Ignore R history files
 *.Rhistory
+
+*csv
